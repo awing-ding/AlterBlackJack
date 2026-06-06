@@ -249,10 +249,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         if (i.customId === "hit") {
             playerHand.push(deck.pop()!);
             actionLog.push("Player hits");
-            if ((await getHandValue(dealerHand)) < seuil) {
-                dealerHand.push(deck.pop()!);
-                actionLog.push("Dealer hits");
-            }
             if ((await getHandValue(playerHand)) > 21) {
                 actionLog.push("Player busts");
             }
