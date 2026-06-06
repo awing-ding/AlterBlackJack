@@ -42,13 +42,10 @@ async function getHandValue(hand: number[]) {
     let handValue = 0;
     let asCount = 0;
     for (const i of hand) {
-        console.log(`i : ${i}`)
         const j = i % 13 + 2;
-        console.log(`j : ${j}`)
-        if (j == 0) asCount++;
+        if (j == 1 || j == 14) asCount++;
         else if (j > 9) handValue += 10;
         else handValue += j;
-        console.log(`handValue : ${handValue}`)
     }
     //configuration possible with aces:
     //0 : 0
@@ -69,15 +66,12 @@ async function getHandValue(hand: number[]) {
             break;
     }
     let max: number | undefined = undefined;
-    let min = 21;
+    let min = 200;
     for (const i of combination) {
-        const j = handValue + combination[i];
+        const j = handValue + i;
         if (j > (max ?? 0) && j <= 21) max = j;
-        if (j > min) min = j;
+        if (j < min) min = j;
     }
-    console.log(`max : ${max}`)
-    console.log(`min : ${min}`)
-
     if (!max) return min;
     return max;
 
@@ -166,12 +160,14 @@ async function shuffle(array: number[]) {
     return array;
 }
 
-async function buildDisplayComponent(image: AttachmentBuilder, userId: string, index: number, actionLog: string[], disable_all = false) {
+async function buildDisplayComponent(image: AttachmentBuilder, userId: string, index: number, actionLog: string[], disable_all = false, lost = 0) {
+
     const container = new ContainerBuilder()
-        .setAccentColor(0x009900)
+        .setAccentColor(lost == 1 ? 0X990000 : lost == 0 ? 0x009900 : 0x555555)
         .addTextDisplayComponents((text) =>
             text.setContent(
-                `<@${userId}> It's gambling time !\nPrécédemment:\n${actionLog.join("\n")}`
+                (index == 0 ? `<@${userId}> It's gambling time !\n` : "" ) +
+                (actionLog.length > 0 ? `Précédemment:\n${actionLog.join("\n")}` : "")
             )
         ).addSeparatorComponents()
         .addMediaGalleryComponents((gallery) =>
@@ -217,6 +213,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     let dealerHand = [deck.pop()!, deck.pop()!];
     let actionLog: string[] = [];
     let index = 0;
+    if (await getHandValue(playerHand) == 21) {
+        actionLog.push("Blackjack ! Player wins !");
+    }
 
     const tapisBuffer = (await generateSvgLayout(dealerHand, playerHand))?.toBuffer()!;
     const tapis = new AttachmentBuilder(tapisBuffer).setName("tapis.png");
@@ -229,13 +228,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         withResponse: true,
     })
 
-    const collectorFilter = (i: Interaction) => i.user.id === joueur.id;
     const collector = responseInteraction.resource?.message?.createMessageComponentCollector({
         componentType: ComponentType.Button,
         time: 300_000
     })!;
 
     collector.on('collect', async (i) => {
+        if (i.user.id !== joueur.id) {
+            await i.reply({content: "Ce n'est pas à vous de jouer !", flags: MessageFlags.Ephemeral});
+            return;
+        }
         if (!i) {
             await interaction.editReply({
                 content: "Failed to parse Interaction !",
@@ -272,22 +274,29 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         let disable_all = false;
         let playerScore = await getHandValue(playerHand);
         let dealerScore = await getHandValue(dealerHand);
-        console.log(playerScore);
-        console.log(playerHand);
-        console.log(dealerScore);
-        console.log(dealerHand);
         if (playerScore > 21 || dealerScore > 21 || i.customId === "stand" || i.customId === "double") disable_all = true;
+        let lost = 0;
         if (disable_all){
-            if (playerScore > 21) actionLog.push("Player busts, dealer wins !");
+            if (playerScore > 21) {
+                actionLog.push("Player busts, dealer wins !");
+                lost = 1;
+            }
             else if (dealerScore > 21) actionLog.push("Dealer busts, player wins !");
             else if (playerScore > await getHandValue(dealerHand)) actionLog.push("Player wins !");
-            else if (playerScore < await getHandValue(dealerHand)) actionLog.push("Dealer wins !");
-            else actionLog.push("It's a tie !");
+            else if (playerScore < await getHandValue(dealerHand)) {
+                actionLog.push("Dealer wins !");
+                lost = 1;
+            }
+            else {
+                actionLog.push("It's a tie !");
+                lost = -1;
+            }
             actionLog.push(`Player score : ${playerScore}, Dealer score : ${dealerScore}`);
         }
+        index++;
         const tapisBuffer_local = (await generateSvgLayout(dealerHand, playerHand, disable_all))?.toBuffer()!;
         const tapis_local = new AttachmentBuilder(tapisBuffer_local).setName("tapis.png");
-        const response_local = await buildDisplayComponent(tapis_local, joueur.id, index, actionLog, disable_all);
+        const response_local = await buildDisplayComponent(tapis_local, joueur.id, index, actionLog, disable_all, lost);
 
         await i.update({
             components: response_local,
