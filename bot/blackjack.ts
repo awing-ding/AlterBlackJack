@@ -23,6 +23,7 @@ import {
 } from "discord.js";
 import fs from "fs/promises";
 import {createCanvas, loadImage} from "canvas";
+import * as http from "node:http";
 
 
 //We have 52 cards in a standard game
@@ -30,7 +31,7 @@ import {createCanvas, loadImage} from "canvas";
 //We can represent them as numbers, such as 0-12 for hearts, 13-25 for diamonds, 26-38 for clubs and 39-51 for spades
 //We do this by taking the 13 modulo we then get 0-12 range, and the euclidian division quotient being the color
 //e.g. 48 % 13 = 9, 48 // 13 = 3, it's then the 10 of spades
-const colors = ["C", "H", "D", "S"]
+const colors = ["H", "D", "C", "S"]
 const faces = ["J", "Q", "K"]
 
 type t_card = {
@@ -97,9 +98,7 @@ function getCardName(card: t_card) {
     let v = card.value % 13
     if (v > 9) {
         return `${card.color}${faces[v - 10]}`
-    } else if (v == 0) {
-        return `${card.color}A`
-    } else {
+    }else {
         return `${card.color}${v + 1}`
     }
 }
@@ -111,8 +110,8 @@ async function generateSvgLayout(dealerDeck: number[], playerDeck: number[], sho
     let playerDeckCards = playerDeck.map((card) => getColor(card)!);
     let playerDeckCardsId = playerDeckCards.map((card) => getCardName(card));
 
-    const CARD_WIDTH = 240;
-    const CARD_HEIGHT = 344;
+    const CARD_WIDTH = 69;
+    const CARD_HEIGHT = 93;
 
     const width = CARD_WIDTH * Math.max(dealerDeckCardsId.length, playerDeckCardsId.length) + 20;
     const SEPARATOR = 50;
@@ -124,9 +123,19 @@ async function generateSvgLayout(dealerDeck: number[], playerDeck: number[], sho
     ctx.fillStyle = "#009900";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    let x = (canvas.width - (dealerDeckCardsId.length * CARD_WIDTH)) / 2;
+    let x = (canvas.width - ((dealerDeckCardsId.length + (show_all ? 0 : 1)) * CARD_WIDTH)) / 2;
+    if (!show_all){
+        try {
+            const file = await fs.readFile(`${process.cwd()}/assets/_R.png`);
+            const png = await loadImage(file);
+            ctx.drawImage(png, x, 5);
+        } catch (err) {
+            console.error(err);
+            return;
+        } x+= CARD_WIDTH;
+    }
     for (const card of dealerDeckCardsId) {
-        const path = `${process.cwd()}/assets/png/${card}.png`;
+        const path = `${process.cwd()}/assets/${card}.png`;
         try {
             const file = await fs.readFile(path);
             const png = await loadImage(file);
@@ -139,11 +148,11 @@ async function generateSvgLayout(dealerDeck: number[], playerDeck: number[], sho
     }
     x = (canvas.width - (playerDeckCardsId.length * CARD_WIDTH)) / 2;
     for (const card of playerDeckCardsId) {
-        const path = `${process.cwd()}/assets/png/${card}.png`;
+        const path = `${process.cwd()}/assets/${card}.png`;
         try {
             const file = await fs.readFile(path)
             const png = await loadImage(file);
-            ctx.drawImage(png, x, CARD_HEIGHT + SEPARATOR + 5);
+            ctx.drawImage(png, x, CARD_HEIGHT + SEPARATOR - 5);
         } catch (err) {
             console.error(err);
             return;
@@ -197,125 +206,166 @@ async function buildDisplayComponent(image: AttachmentBuilder, userId: string, i
 export let data = new SlashCommandBuilder()
     .setName("blackjack")
     .setDescription("Jouez au blackjack contre le bot !")
-    .addUserOption(option => {
-        option.setName("joueur")
-            .setDescription("Le joueur qui va jouer")
-            .setRequired(true)
-        return option
-    }).addIntegerOption(option => {
-        option.setName("seuil")
-            .setDescription("Le seuil de la banque (entre 1 et 21)")
-            .setMinValue(1)
-            .setMaxValue(21)
-        return option
-    });
+    .addSubcommand(subcommand =>
+        subcommand.setName("play")
+            .setDescription("Jouer une partie de blackjack contre le bot")
+            .addUserOption(option =>
+            option.setName("joueur")
+                .setDescription("Le joueur qui va jouer")
+            ).addIntegerOption(option =>
+            option.setName("seuil")
+                .setDescription("Le seuil de la banque (entre 1 et 21)")
+                .setMinValue(1)
+                .setMaxValue(21)
+        )
+    ).addSubcommand(subcommand =>
+        subcommand.setName("stats")
+            .setDescription("Affichez vos statistiques !")
+        );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const joueur = interaction.options.getUser("joueur")!;
-    const seuil = interaction.options.getInteger("seuil") ?? 17;
-    let deck = range(52).toArray();
-    deck = await shuffle(deck);
-    let playerHand = [deck.pop()!, deck.pop()!];
-    let dealerHand = [deck.pop()!, deck.pop()!];
-    let actionLog: string[] = [];
-    let index = 0;
-    let playerSore = await getHandValue(playerHand);
-    if (playerSore == 21) {
-        actionLog.push("Blackjack ! Player wins !");
-    }
-
-    const displayScores = {
-        player: playerSore,
-        dealer: playerSore >= 21 ? await getHandValue(dealerHand) : await getHandValue(dealerHand.slice(1))
-    }
-
-    const tapisBuffer = (await generateSvgLayout(dealerHand, playerHand))?.toBuffer()!;
-    const tapis = new AttachmentBuilder(tapisBuffer).setName("tapis.png");
-    const response = await buildDisplayComponent(tapis, joueur.id, index, actionLog, displayScores, playerSore >= 21);
-
-    let responseInteraction = await interaction.reply({
-        components: response,
-        files: [tapis],
-        flags: MessageFlags.IsComponentsV2,
-        withResponse: true,
-    })
-
-    if (playerSore >= 21) return;
-
-    const collector = responseInteraction.resource?.message?.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: 300_000
-    })!;
-
-    collector.on('collect', async (i) => {
-        if (i.user.id !== joueur.id) {
-            await i.reply({content: "Ce n'est pas à vous de jouer !", flags: MessageFlags.Ephemeral});
-            return;
-        }
-        if (!i) {
-            await interaction.editReply({
-                content: "Failed to parse Interaction !",
-                components: []
-            });
-            return;
-        }
-
-        if (i.customId === "hit") {
-            playerHand.push(deck.pop()!);
-            actionLog.push("Player hits");
-            if ((await getHandValue(playerHand)) > 21) {
-                actionLog.push("Player busts");
-            }
-        } else if (i.customId === "stand") {
-            actionLog.push("Player stands");
-            while ((await getHandValue(dealerHand)) < seuil) {
-                dealerHand.push(deck.pop()!);
-                actionLog.push("Dealer hits");
-            }
-        } else if (i.customId === "double") {
-            if (index != 0) console.error(`Double should not be possible in turn ${index}, ${i.id}`)
-            playerHand.push(deck.pop()!);
-            actionLog.push("Player double");
-            while ((await getHandValue(dealerHand)) < seuil) {
-                dealerHand.push(deck.pop()!);
-                actionLog.push("Dealer hits");
-            }
-        }
-        let disable_all = false;
-        let playerScore = await getHandValue(playerHand);
-        let dealerScore = await getHandValue(dealerHand);
-        if (playerScore > 21 || dealerScore > 21 || i.customId === "stand" || i.customId === "double") disable_all = true;
-        let lost = 0;
-        if (disable_all){
-            if (playerScore > 21) {
-                actionLog.push("Player busts, dealer wins !");
-                lost = 1;
-            }
-            else if (dealerScore > 21) actionLog.push("Dealer busts, player wins !");
-            else if (playerScore > dealerScore) actionLog.push("Player wins !");
-            else if (playerScore < dealerScore) {
-                actionLog.push("Dealer wins !");
-                lost = 1;
-            }
-            else {
-                actionLog.push("It's a tie !");
-                lost = -1;
-            }
-            actionLog.push();
-        }
-        index++;
-        const displayScores = {
-            player: playerScore,
-            dealer: disable_all ? dealerScore : await getHandValue(dealerHand.slice(1))
-        }
-        const tapisBuffer_local = (await generateSvgLayout(dealerHand, playerHand, disable_all))?.toBuffer()!;
-        const tapis_local = new AttachmentBuilder(tapisBuffer_local).setName("tapis.png");
-        const response_local = await buildDisplayComponent(tapis_local, joueur.id, index, actionLog, displayScores, disable_all, lost);
-
-        await i.update({
-            components: response_local,
-            files: [tapis_local],
-            flags: MessageFlags.IsComponentsV2,
+    if (interaction.options.getSubcommand() == "stats"){
+        const stats = await fetch(`http://backend:3497/user/stats/${interaction.user.id}`)
+        const result = await stats.json();
+        await interaction.reply({content:
+                `# Statistiques\n`+
+                `**Score minimal** : ${result.min_score}\n`+
+                `**Score maximum** : ${result.max_score}\n`+
+                `**Score moyen** : ${result.avg_score}\n`+
+                `**Nombre de parties** : ${result.total_games}\n`+
+                `**Nombre de BlackJack** : ${result.nb_blackjack}\n`+
+                `**Nombre de parties gagnées** : ${result.nb_gagne}\n`+
+                `**Ratio de parties gagnées** : ${result.percent_gagne}\n`
         })
-    })
+    } else if (interaction.options.getSubcommand() == "play") {
+        const joueur = interaction.options.getUser("joueur") ?? interaction.user;
+        const seuil = interaction.options.getInteger("seuil") ?? 17;
+        let deck = range(52).toArray();
+        deck = await shuffle(deck);
+        let playerHand = [deck.pop()!, deck.pop()!];
+        let dealerHand = [deck.pop()!, deck.pop()!];
+        let actionLog: string[] = [];
+        let index = 0;
+        let playerSore = await getHandValue(playerHand);
+        if (playerSore == 21) {
+            actionLog.push("Blackjack ! Player wins !");
+        }
+
+        const displayScores = {
+            player: playerSore,
+            dealer: playerSore >= 21 ? await getHandValue(dealerHand) : await getHandValue(dealerHand.slice(1))
+        }
+
+        const tapisBuffer = (await generateSvgLayout(dealerHand, playerHand))?.toBuffer()!;
+        const tapis = new AttachmentBuilder(tapisBuffer).setName("tapis.png");
+        const response = await buildDisplayComponent(tapis, joueur.id, index, actionLog, displayScores, playerSore >= 21);
+
+        let responseInteraction = await interaction.reply({
+            components: response,
+            files: [tapis],
+            flags: MessageFlags.IsComponentsV2,
+            withResponse: true,
+        })
+
+        if (playerSore >= 21) return;
+
+        const collector = responseInteraction.resource?.message?.createMessageComponentCollector({
+            componentType: ComponentType.Button,
+            time: 300_000
+        })!;
+
+        collector.on('collect', async (i) => {
+            if (i.user.id !== joueur.id) {
+                await i.reply({content: "Ce n'est pas à vous de jouer !", flags: MessageFlags.Ephemeral});
+                return;
+            }
+            if (!i) {
+                await interaction.editReply({
+                    content: "Failed to parse Interaction !",
+                    components: []
+                });
+                return;
+            }
+
+            if (i.customId === "hit") {
+                playerHand.push(deck.pop()!);
+                actionLog.push("Player hits");
+                if ((await getHandValue(playerHand)) > 21) {
+                    actionLog.push("Player busts");
+                }
+            } else if (i.customId === "stand") {
+                actionLog.push("Player stands");
+                while ((await getHandValue(dealerHand)) < seuil) {
+                    dealerHand.push(deck.pop()!);
+                    actionLog.push("Dealer hits");
+                }
+            } else if (i.customId === "double") {
+                if (index != 0) console.error(`Double should not be possible in turn ${index}, ${i.id}`)
+                playerHand.push(deck.pop()!);
+                actionLog.push("Player double");
+                while ((await getHandValue(dealerHand)) < seuil) {
+                    dealerHand.push(deck.pop()!);
+                    actionLog.push("Dealer hits");
+                }
+            }
+            let disable_all = false;
+            let playerScore = await getHandValue(playerHand);
+            let dealerScore = await getHandValue(dealerHand);
+            if (playerScore > 21 || dealerScore > 21 || i.customId === "stand" || i.customId === "double") disable_all = true;
+            let lost = 0;
+            if (disable_all) {
+                if (playerScore > 21) {
+                    actionLog.push("Player busts, dealer wins !");
+                    lost = 1;
+                } else if (dealerScore > 21) actionLog.push("Dealer busts, player wins !");
+                else if (playerScore > dealerScore) actionLog.push("Player wins !");
+                else if (playerScore < dealerScore) {
+                    actionLog.push("Dealer wins !");
+                    lost = 1;
+                } else {
+                    actionLog.push("It's a tie !");
+                    lost = -1;
+                }
+                actionLog.push();
+            }
+            index++;
+            const displayScores = {
+                player: playerScore,
+                dealer: disable_all ? dealerScore : await getHandValue(dealerHand.slice(1))
+            }
+            const tapisBuffer_local = (await generateSvgLayout(dealerHand, playerHand, disable_all))?.toBuffer()!;
+            const tapis_local = new AttachmentBuilder(tapisBuffer_local).setName("tapis.png");
+            const response_local = await buildDisplayComponent(tapis_local, joueur.id, index, actionLog, displayScores, disable_all, lost);
+
+            if (disable_all) {
+
+                const body = JSON.stringify({
+                    dealer_score: dealerScore,
+                    nb_player: 1,
+                    players: [
+                        {
+                            user_id: joueur.id,
+                            won: lost == 0,
+                            blackjack: playerScore == 21 && playerHand.length == 2,
+                            player_score: playerScore
+                        },
+                    ]
+                })
+
+                await fetch("http://backend:3497/game/", {
+                    method: 'POST',
+                    headers: {
+                        'Content-type': 'application/json',
+                    },
+                    body: body
+                })
+            }
+
+            await i.update({
+                components: response_local,
+                files: [tapis_local],
+                flags: MessageFlags.IsComponentsV2,
+            })
+        })
+    }
 }
