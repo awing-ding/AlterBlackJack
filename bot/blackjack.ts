@@ -38,6 +38,11 @@ type t_card = {
     color: string,
 }
 
+type t_score = {
+    player: number,
+    dealer: number
+}
+
 async function getHandValue(hand: number[]) {
     let handValue = 0;
     let asCount = 0;
@@ -160,13 +165,14 @@ async function shuffle(array: number[]) {
     return array;
 }
 
-async function buildDisplayComponent(image: AttachmentBuilder, userId: string, index: number, actionLog: string[], disable_all = false, lost = 0) {
+async function buildDisplayComponent(image: AttachmentBuilder, userId: string, index: number, actionLog: string[], scores: t_score, disable_all = false, lost = 0) {
 
     const container = new ContainerBuilder()
         .setAccentColor(lost == 1 ? 0X990000 : lost == 0 ? 0x009900 : 0x555555)
         .addTextDisplayComponents((text) =>
             text.setContent(
                 (index == 0 ? `<@${userId}> It's gambling time !\n` : "" ) +
+                `Player score : ${scores.player}, Dealer score : ${scores.dealer}\n` +
                 (actionLog.length > 0 ? `Précédemment:\n${actionLog.join("\n")}` : "")
             )
         ).addSeparatorComponents()
@@ -213,13 +219,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     let dealerHand = [deck.pop()!, deck.pop()!];
     let actionLog: string[] = [];
     let index = 0;
-    if (await getHandValue(playerHand) == 21) {
+    let playerSore = await getHandValue(playerHand);
+    if (playerSore == 21) {
         actionLog.push("Blackjack ! Player wins !");
+    }
+
+    const displayScores = {
+        player: playerSore,
+        dealer: playerSore >= 21 ? await getHandValue(dealerHand) : await getHandValue(dealerHand.slice(1))
     }
 
     const tapisBuffer = (await generateSvgLayout(dealerHand, playerHand))?.toBuffer()!;
     const tapis = new AttachmentBuilder(tapisBuffer).setName("tapis.png");
-    const response = await buildDisplayComponent(tapis, joueur.id, index, actionLog);
+    const response = await buildDisplayComponent(tapis, joueur.id, index, actionLog, displayScores, playerSore >= 21);
 
     let responseInteraction = await interaction.reply({
         components: response,
@@ -227,6 +239,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         flags: MessageFlags.IsComponentsV2,
         withResponse: true,
     })
+
+    if (playerSore >= 21) return;
 
     const collector = responseInteraction.resource?.message?.createMessageComponentCollector({
         componentType: ComponentType.Button,
@@ -278,8 +292,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                 lost = 1;
             }
             else if (dealerScore > 21) actionLog.push("Dealer busts, player wins !");
-            else if (playerScore > await getHandValue(dealerHand)) actionLog.push("Player wins !");
-            else if (playerScore < await getHandValue(dealerHand)) {
+            else if (playerScore > dealerScore) actionLog.push("Player wins !");
+            else if (playerScore < dealerScore) {
                 actionLog.push("Dealer wins !");
                 lost = 1;
             }
@@ -287,12 +301,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                 actionLog.push("It's a tie !");
                 lost = -1;
             }
-            actionLog.push(`Player score : ${playerScore}, Dealer score : ${dealerScore}`);
+            actionLog.push();
         }
         index++;
+        const displayScores = {
+            player: playerScore,
+            dealer: disable_all ? dealerScore : await getHandValue(dealerHand.slice(1))
+        }
         const tapisBuffer_local = (await generateSvgLayout(dealerHand, playerHand, disable_all))?.toBuffer()!;
         const tapis_local = new AttachmentBuilder(tapisBuffer_local).setName("tapis.png");
-        const response_local = await buildDisplayComponent(tapis_local, joueur.id, index, actionLog, disable_all, lost);
+        const response_local = await buildDisplayComponent(tapis_local, joueur.id, index, actionLog, displayScores, disable_all, lost);
 
         await i.update({
             components: response_local,
