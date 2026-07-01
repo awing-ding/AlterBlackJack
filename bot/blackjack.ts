@@ -232,7 +232,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                 `**Score minimal** : ${result.min_score}\n`+
                 `**Score maximum** : ${result.max_score}\n`+
                 `**Score moyen** : ${result.avg_score}\n`+
-                `**Nombre de parties** : ${result.total_games}\n`+
+                `**Nombre de parties** : ${(1*result.total_games).toFixed(2)}\n`+
                 `**Nombre de BlackJack** : ${result.nb_blackjack}\n`+
                 `**Nombre de parties gagnées** : ${result.nb_gagne}\n`+
                 `**Ratio de parties gagnées** : ${result.percent_gagne}\n`

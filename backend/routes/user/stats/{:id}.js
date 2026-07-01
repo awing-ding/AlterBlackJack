@@ -22,7 +22,7 @@ export async function get(req, res){
             "COUNT(*) AS total_games, " +
             "SUM(CASE WHEN blackjack THEN 1 ELSE 0 END) as nb_blackjack, " +
             "SUM(CASE WHEN won THEN 1 ELSE 0 END) as nb_gagne, " +
-            "(SUM(CASE WHEN won THEN 1 ELSE 0 END) / COUNT(*)) as percent_gagne " +
+            "(SUM(CASE WHEN won THEN 1 ELSE 0 END)::float / COUNT(*)) as percent_gagne " +
             "FROM played WHERE user_id=$1;";
         const stats = await client.query(sqlString, [id]);
         res.status(200).send(JSON.stringify(stats.rows[0]));
