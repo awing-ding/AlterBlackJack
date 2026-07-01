@@ -235,7 +235,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
                 `**Nombre de parties** : ${(1*result.total_games).toFixed(2)}\n`+
                 `**Nombre de BlackJack** : ${result.nb_blackjack}\n`+
                 `**Nombre de parties gagnées** : ${result.nb_gagne}\n`+
-                `**Ratio de parties gagnées** : ${result.percent_gagne}\n`
+                `**Ratio de parties gagnées** : ${(100*result.percent_gagne).toFixed(1)}%\n`
         })
     } else if (interaction.options.getSubcommand() == "play") {
         const joueur = interaction.options.getUser("joueur") ?? interaction.user;
