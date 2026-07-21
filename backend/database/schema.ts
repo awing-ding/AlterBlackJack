@@ -1,12 +1,10 @@
 import {
 	pgTable,
 	serial,
-	bigserial,
 	bigint,
 	integer,
 	boolean,
 	timestamp,
-	foreignKey,
 	primaryKey,
 	pgView,
     check
@@ -49,6 +47,3 @@ export const bjStatsView = pgView("bj_stats_view").as((qb) => qb
 	}).from(bjPlayed).groupBy(bjPlayed.userId)
 )
 
-export const bjUsers = pgTable("bj_users", {
-	id: bigserial({ mode: 'number' }).primaryKey(),
-});

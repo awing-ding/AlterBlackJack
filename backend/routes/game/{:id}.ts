@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import {db} from "../../database/connexion";
 import {eq} from "drizzle-orm"
 import * as yup from "yup";
-import {bjGames, bjUsers, bjPlayed} from "../../database/schema"
+import {bjGames, bjPlayed} from "../../database/schema"
 
 export async function get(req: Request, res: Response) {
     const schema = yup.object({
@@ -52,8 +52,6 @@ export async function post(req: Request, res: Response){
             nbPlayer: queryParams.nbPlayers
         }).returning({id: bjGames.id});
         const id = q[0].id;
-        const player_ids = queryParams.players.map(obj => ({id: obj.userId}));
-        await db.insert(bjUsers).values(player_ids).onConflictDoNothing();
         const played_data = queryParams.players.map(obj => {
             obj.gameId = id;
             return obj;
