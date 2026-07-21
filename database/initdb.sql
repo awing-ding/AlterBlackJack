@@ -52,4 +52,17 @@ CREATE TABLE IF NOT EXISTS played
     game_id
 )
     );
+
+CREATE VIEW stats AS
+SELECT
+    user_id,
+    MIN(player_score) AS min_score,
+    MAX(player_score) AS max_score,
+    AVG(player_score) AS avg_score,
+    COUNT(*) AS total_games,
+    COUNT(*) FILTER (WHERE blackjack) AS nb_blackjack,
+    COUNT(*) FILTER (WHERE won) AS nb_won,
+    AVG(won::int) AS win_rate
+FROM played
+GROUP BY user_id;
 COMMIT;
