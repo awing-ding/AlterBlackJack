@@ -38,14 +38,14 @@ export const bjPlayed = pgTable("bj_played", {
 
 export const bjStatsView = pgView("bj_stats_view").as((qb) => qb
 	.select({
-		userId: bjPlayed.userId,
-		minScore: sql<number>`min(${bjPlayed.playerScore})`,
-		maxScore: sql<number>`max(${bjPlayed.playerScore})`,
-		avgScore: sql<number>`avg(${bjPlayed.playerScore})`,
-		totalGames: sql<number>`count(*)`,
-		nbBlackjack: sql<number>`sum(case when ${bjPlayed.blackjack} then 1 else 0 end)`,
-		nbGagne: sql<number>`sum(case when ${bjPlayed.won} then 1 else 0 end)`,
-		percentGagne: sql<number>`(sum(case when ${bjPlayed.won} then 1 else 0 end)::float / count(*))`
+		userId: bjPlayed.userId.as("id"),
+		minScore: (sql<number>`min(${bjPlayed.playerScore})`).as("minScore"),
+		maxScore: (sql<number>`max(${bjPlayed.playerScore})`).as("maxScore"),
+		avgScore: (sql<number>`avg(${bjPlayed.playerScore})`).as("avgScore"),
+		totalGames: (sql<number>`count(*)`).as("totalGames"),
+		nbBlackjack: (sql<number>`sum(case when ${bjPlayed.blackjack} then 1 else 0 end)`).as("nbBlackjack"),
+		nbGagne: (sql<number>`sum(case when ${bjPlayed.won} then 1 else 0 end)`).as("nbGagne"),
+		percentGagne: (sql<number>`(sum(case when ${bjPlayed.won} then 1 else 0 end)::float / count(*))`).as("percentGagne")
 	}).from(bjPlayed).groupBy(bjPlayed.userId)
 )
 
