@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 (async () => {
-    const routesPath = path.join(process.cwd(), "routes");
+    const routesPath = path.join(process.cwd(), "dist/routes");
     let files = fs.readdirSync(routesPath, {withFileTypes: true});
     do {
         const file = files.pop()!;

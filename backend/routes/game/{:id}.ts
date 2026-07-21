@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import {db} from "@database/connexion.js";
+import {db} from "@database/connexion";
 import {eq} from "drizzle-orm"
 import * as yup from "yup";
-import {bjGames, bjPlayed} from "@database/schema.js"
+import {bjGames, bjPlayed} from "@database/schema"
 
 export async function get(req: Request, res: Response) {
     const schema = yup.object({

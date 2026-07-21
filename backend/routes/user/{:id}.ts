@@ -1,8 +1,8 @@
-import {db} from "@database/connexion.js";
+import {db} from "@database/connexion";
 import {Request, Response} from "express";
 import {eq} from "drizzle-orm"
-import {bjPlayed} from "@database/schema.js"
-import {validateId} from "@/utility.js";
+import {bjPlayed} from "@database/schema"
+import {validateId} from "@/utility";
 
 export async function get(req: Request, res: Response){
     let id = validateId(req.params.id, res)
