@@ -1,8 +1,8 @@
-import {db} from "../../../database/connexion.js";
+import {db} from "@database/connexion.js";
 import { Request, Response } from "express";
 import {eq} from "drizzle-orm"
-import {validateId} from "../../../utility.js";
-import {bjStatsView} from "../../../database/schema.js";
+import {validateId} from "@/utility.js";
+import {bjStatsView} from "@database/schema.js";
 
 export async function get(req: Request, res: Response) {
     const id = validateId(req.params.id, res);
