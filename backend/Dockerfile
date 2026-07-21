@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm\
      npm ci
-COPY *.ts package* ./
+COPY *.ts package* tsconfig.json ./
 COPY routes/ ./routes/
 COPY database/ ./database/
 RUN npm run build
