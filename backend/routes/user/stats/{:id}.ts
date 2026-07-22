@@ -12,7 +12,6 @@ export async function get(req: Request, res: Response) {
             .select()
             .from(bjStatsView)
             .where(eq(bjStatsView.userId, sql<number>`${id}::NUMERIC`));
-        console.log(stats);
         if (!stats) return res.status(404).send({error: "User Not Found"});
         res.status(200).send(JSON.stringify(stats));
     } catch (e) {
