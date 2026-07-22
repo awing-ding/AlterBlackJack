@@ -11,7 +11,7 @@ export async function get(req: Request, res: Response) {
         const stats = await db
             .select()
             .from(bjStatsView)
-            .where(eq(bjStatsView.userId, sql<number>`${id}::INTEGER`));
+            .where(eq(bjStatsView.userId, sql<number>`${id}::NUMERIC`));
         console.log(stats);
         if (!stats) return res.status(404).send({error: "User Not Found"});
         res.status(200).send(JSON.stringify(stats));
