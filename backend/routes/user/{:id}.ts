@@ -10,6 +10,8 @@ export async function get(req: Request, res: Response){
     try {
         const history = await db.select().from(bjPlayed)
             .where(eq(bjPlayed.userId, id))
+        console.log(history)
+        if (!history) return res.status(404).send({error: "user not found"});
         res.status(200).send(JSON.stringify(history));
     } catch (e) {
         console.error(e);

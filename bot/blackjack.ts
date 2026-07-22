@@ -226,6 +226,11 @@ export let data = new SlashCommandBuilder()
 export async function execute(interaction: ChatInputCommandInteraction) {
     if (interaction.options.getSubcommand() == "stats"){
         const stats = await fetch(`http://backend:3497/user/stats/${interaction.user.id}`)
+        if (stats.statusCode != 200){
+            console.warn(stats.body)
+            console.warn((await stats.json()))
+            return interaction.reply({content: "Il y a eu une erreur en allant chercher les stats!", flags: MessageFlags.Ephemeral});
+        }
         const result = await stats.json();
         await interaction.reply({content:
                 `# Statistiques\n`+

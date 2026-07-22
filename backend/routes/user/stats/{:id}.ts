@@ -8,10 +8,11 @@ export async function get(req: Request, res: Response) {
     const id = validateId(req.params.id, res);
     if (!id) return;
     try{
-        const stats = db
+        const stats = await db
             .select()
             .from(bjStatsView)
             .where(eq(bjStatsView.userId, id));
+        console.log(stats);
         res.status(200).send(JSON.stringify(stats));
     } catch (e) {
         console.error(e);

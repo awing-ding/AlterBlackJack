@@ -16,7 +16,7 @@ app.use(express.json());
             files = files.concat(newFiles);
         } else {
             const route = await import(full_path);
-            const qualified_path = full_path.slice(routesPath.length).slice(0, -3) + "/";
+            const qualified_path = full_path.slice(routesPath.length).slice(0, -4).replace("{_", "{:") + "/";
             if (route.get) {
                 app.get(qualified_path, route.get);
                 console.log(`registering: \n\tGET ${qualified_path}\n`);
