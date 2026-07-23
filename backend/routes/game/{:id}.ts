@@ -40,12 +40,12 @@ export async function post(req: Request, res: Response){
         })).required()
     })
     try {
-        await schema.validate(req.params)
+        await schema.validate(req.body)
     } catch (e) {
         console.error(e);
         res.status(400).send({error: "Request malformed"});
     }
-    const queryParams = schema.cast(req.params);
+    const queryParams = schema.cast(req.body);
     try {
         const q = await db.insert(bjGames).values({
             dealerScore: queryParams.dealerScore,
