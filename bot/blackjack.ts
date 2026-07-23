@@ -346,7 +346,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
                 const body = JSON.stringify({
                     dealerScore: dealerScore,
-                    nbPlayer: 1,
+                    nbPlayers: 1,
                     players: [
                         {
                             userId: joueur.id,
