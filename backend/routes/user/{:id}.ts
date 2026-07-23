@@ -1,6 +1,6 @@
 import {db} from "@database/connexion";
 import {Request, Response} from "express";
-import {eq, sql} from "drizzle-orm"
+import {eq} from "drizzle-orm"
 import {bjPlayed} from "@database/schema"
 import {validateId} from "@/utility";
 
@@ -9,7 +9,7 @@ export async function get(req: Request, res: Response){
     if (!id) return;
     try {
         const history = await db.select().from(bjPlayed)
-            .where(eq(bjPlayed.userId, sql<number>`${id}::NUMERIC`))
+            .where(eq(bjPlayed.userId, BigInt(id)))
         if (!history) return res.status(404).send({error: "user not found"});
         res.status(200).send(JSON.stringify(history));
     } catch (e) {

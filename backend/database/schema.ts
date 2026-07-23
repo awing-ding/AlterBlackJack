@@ -24,7 +24,7 @@ export const bjGames = pgTable("bj_games", {
 );
 
 export const bjPlayed = pgTable("bj_played", {
-	userId: bigint("user_id", { mode: 'number' }).notNull(),
+	userId: bigint("user_id", { mode: 'bigint' }).notNull(),
 	gameId: integer("game_id").notNull().references(() => bjGames.id),
 	won: boolean().default(false).notNull(),
 	playerScore: integer("player_score").notNull(),
@@ -46,4 +46,3 @@ export const bjStatsView = pgView("bj_stats_view").as((qb) => qb
 		percentGagne: (sql<number>`(sum(case when ${bjPlayed.won} then 1 else 0 end)::float / count(*))`).as("percentGagne")
 	}).from(bjPlayed).groupBy(bjPlayed.userId)
 )
-

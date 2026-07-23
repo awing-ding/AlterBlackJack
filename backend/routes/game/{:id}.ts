@@ -33,34 +33,34 @@ export async function post(req: Request, res: Response){
         created_at: yup.number().default(() => Date.now()),
         players: yup.array(yup.object({
             gameId: yup.number().default(0),
-            userId: yup.number().min(1).required(),
+            userId: yup.string().matches(/^\d+$/).required(),
             won: yup.boolean().required(),
             playerScore: yup.number().min(1).required(),
             blackjack: yup.boolean().default(false),
         })).required()
     })
     try {
-        await schema.validate(req.body)
-    } catch (e) {
-        console.error(e);
-        res.status(400).send({error: "Request malformed"});
-    }
-    const queryParams = schema.cast(req.body);
-    try {
+        const queryParams = await schema.validate(req.body)
         const q = await db.insert(bjGames).values({
             dealerScore: queryParams.dealerScore,
             nbPlayer: queryParams.nbPlayers
         }).returning({id: bjGames.id});
         const id = q[0].id;
-        const played_data = queryParams.players.map(obj => {
-            obj.gameId = id;
-            return obj;
-        })
-        await db.insert(bjPlayed).values(played_data);
+        const playedData: typeof bjPlayed.$inferInsert[] = queryParams.players.map((player) => ({
+            gameId: id,
+            userId: BigInt(player.userId),
+            won: player.won,
+            playerScore: player.playerScore,
+            blackjack: player.blackjack,
+        }));
+        await db.insert(bjPlayed).values(playedData);
         res.status(200).send();
     } catch (e) {
         console.error(e);
+        if (e instanceof yup.ValidationError) {
+            res.status(400).send({error: "Request malformed"});
+            return;
+        }
         res.status(500).send({error: "database error"});
     }
 }
-
