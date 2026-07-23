@@ -13,7 +13,7 @@ export async function get(req: Request, res: Response) {
             .from(bjStatsView)
             .where(eq(bjStatsView.userId, sql<number>`${id}::NUMERIC`));
         if (!stats) return res.status(404).send({error: "User Not Found"});
-        res.status(200).send(JSON.stringify(stats));
+        res.status(200).send(JSON.stringify(stats[0]));
     } catch (e) {
         console.error(e);
         res.status(500).send({error: "database error"});

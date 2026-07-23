@@ -234,13 +234,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         const result = await stats.json();
         await interaction.reply({content:
                 `# Statistiques\n`+
-                `**Score minimal** : ${result.min_score}\n`+
-                `**Score maximum** : ${result.max_score}\n`+
-                `**Score moyen** : ${(1*result.avg_score).toFixed(2)}\n`+
-                `**Nombre de parties** : ${result.total_games}\n`+
-                `**Nombre de BlackJack** : ${result.nb_blackjack}\n`+
-                `**Nombre de parties gagnées** : ${result.nb_gagne}\n`+
-                `**Ratio de parties gagnées** : ${(100*result.percent_gagne).toFixed(1)}%\n`
+                `**Score minimal** : ${result.minScore}\n`+
+                `**Score maximum** : ${result.maxScore}\n`+
+                `**Score moyen** : ${(1*result.avgScore).toFixed(2)}\n`+
+                `**Nombre de parties** : ${result.totalGames}\n`+
+                `**Nombre de BlackJack** : ${result.nbBlackjack}\n`+
+                `**Nombre de parties gagnées** : ${result.nbGagne}\n`+
+                `**Ratio de parties gagnées** : ${(100*result.percentGagne).toFixed(1)}%\n`
         })
     } else if (interaction.options.getSubcommand() == "play") {
         const joueur = interaction.options.getUser("joueur") ?? interaction.user;
@@ -345,14 +345,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
             if (disable_all) {
 
                 const body = JSON.stringify({
-                    dealer_score: dealerScore,
-                    nb_player: 1,
+                    dealerScore: dealerScore,
+                    nbPlayer: 1,
                     players: [
                         {
-                            user_id: joueur.id,
+                            userId: joueur.id,
                             won: lost == 0,
                             blackjack: playerScore == 21 && playerHand.length == 2,
-                            player_score: playerScore
+                            playerScore: playerScore
                         },
                     ]
                 })
