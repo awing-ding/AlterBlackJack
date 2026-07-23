@@ -11,7 +11,11 @@ export async function get(req: Request, res: Response){
         const history = await db.select().from(bjPlayed)
             .where(eq(bjPlayed.userId, BigInt(id)))
         if (!history) return res.status(404).send({error: "user not found"});
-        res.status(200).send(JSON.stringify(history));
+        const ret = history.map(game => ({
+            ...game,
+            userId: "" + game.userId
+        }));
+        res.status(200).send(JSON.stringify(ret));
     } catch (e) {
         console.error(e);
         res.status(500).send({error: "database error"});
