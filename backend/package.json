@@ -1,0 +1,38 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "GPL-3.0-or-later",
+  "author": "",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "build:test": "rm -rf .test-dist && tsc -p tsconfig.test.json && node -e \"require('fs').writeFileSync('.test-dist/package.json', '{\\\"type\\\":\\\"commonjs\\\"}\\n')\"",
+    "test": "npm run build:test && jest --config ./jest.config.cjs",
+    "dev": "tsx watch index.ts",
+    "start": "node dist/index.cjs",
+    "build": "tsup index.ts utility.ts database/* routes/** --format cjs --minify"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.1.1",
+    "drizzle-kit": "^1.0.0-rc.4",
+    "jest": "^30.4.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^1.0.0-rc.4",
+    "express": "^5.2.1",
+    "yup": "^1.7.1"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.1": true,
+    "@scarf/scarf@1.4.0": true
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "ba7bc2a3-c188-4c1c-8b33-ea06718e3727",
+  "prevIds": [
+    "03b33085-92b3-485a-92ec-71f56f3f623a"
+  ],
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "bj_games",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "bj_played",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "bj_users",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_games"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "dealer_score",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_games"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "nb_player",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_games"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "CURRENT_TIMESTAMP",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_games"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "won",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "player_score",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "blackjack",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "type": "bigserial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "bj_users"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "bj_games",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "bj_played_game_id_bj_games_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "columns": [
+        "user_id",
+        "game_id"
+      ],
+      "nameExplicit": true,
+      "name": "played_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "bj_games_pkey",
+      "schema": "public",
+      "table": "bj_games",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "bj_users_pkey",
+      "schema": "public",
+      "table": "bj_users",
+      "entityType": "pks"
+    },
+    {
+      "value": "\"dealer_score\" BETWEEN 0 AND 31",
+      "name": "dealer_score_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "bj_games"
+    },
+    {
+      "value": "\"nb_player\" BETWEEN 1 AND 6",
+      "name": "player_nb_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "bj_games"
+    },
+    {
+      "value": "\"player_score\" BETWEEN 0 AND 31",
+      "name": "score_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "bj_played"
+    },
+    {
+      "definition": "select \"user_id\" as \"id\", min(\"player_score\") as \"minScore\", max(\"player_score\") as \"maxScore\", avg(\"player_score\") as \"avgScore\", count(*) as \"totalGames\", sum(case when \"blackjack\" then 1 else 0 end) as \"nbBlackjack\", sum(case when \"won\" then 1 else 0 end) as \"nbGagne\", (sum(case when \"won\" then 1 else 0 end)::float / count(*)) as \"percentGagne\" from \"bj_played\" group by \"bj_played\".\"user_id\"",
+      "with": null,
+      "withNoData": null,
+      "using": null,
+      "tablespace": null,
+      "materialized": false,
+      "name": "bj_stats_view",
+      "entityType": "views",
+      "schema": "public"
+    }
+  ],
+  "renames": [
+    "public.bj_games.games_pkey->public.bj_games.bj_games_pkey",
+    "public.bj_users.users_pkey->public.bj_users.bj_users_pkey",
+    "public.bj_played.played_game_id_fkey->public.bj_played.bj_played_game_id_bj_games_id_fkey"
+  ]
+}
