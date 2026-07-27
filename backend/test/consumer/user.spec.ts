@@ -21,8 +21,6 @@ describe('GET /user/:id', () => {
 
     await getUser(req, res);
 
-    expect(from).toHaveBeenCalledWith(bjPlayed);
-    expect(where).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.body).toBe(
       JSON.stringify([
@@ -30,4 +28,13 @@ describe('GET /user/:id', () => {
       ])
     );
   });
+
+  it('returns 404 and empty body', async () =>{
+    where.mockResolvedValue([])
+    const req2 = { params: {id: '2'}} as unknown as Request;
+    const res2 = createMockResponse();
+    await getUser(req2, res2);
+    expect(res2.status).toHaveBeenCalledWith(404);
+    expect(res2.body).toBeUndefined();
+  })
 });

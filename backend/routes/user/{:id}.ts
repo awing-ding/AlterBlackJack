@@ -10,7 +10,7 @@ export async function get(req: Request, res: Response){
     try {
         const history = await db.select().from(bjPlayed)
             .where(eq(bjPlayed.userId, BigInt(id)))
-        if (!history) return res.status(404).send({error: "user not found"});
+        if (history.length === 0) return res.status(404).send();
         const ret = history.map(game => ({
             ...game,
             userId: "" + game.userId

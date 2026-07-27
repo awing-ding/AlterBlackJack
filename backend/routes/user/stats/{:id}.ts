@@ -12,7 +12,7 @@ export async function get(req: Request, res: Response) {
             .select()
             .from(bjStatsView)
             .where(eq(bjStatsView.userId, BigInt(id)));
-        if (!stats) return res.status(404).send({error: "User Not Found"});
+        if (stats.length === 0) return res.status(404).send();
         const ret = {
             ...stats[0],
             userId: ""+stats[0].userId

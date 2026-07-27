@@ -18,6 +18,9 @@ export async function get(req: Request, res: Response) {
     const params = schema.cast(req.params);
     try {
         const game = await db.select().from(bjGames).where(eq(bjGames.id, params.id))
+        if (game.length === 0) {
+            return res.status(404).send()
+        }
         res.status(200).send(JSON.stringify(game[0]));
     } catch (e) {
         console.error(e);

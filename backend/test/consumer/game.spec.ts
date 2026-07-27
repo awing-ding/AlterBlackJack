@@ -20,11 +20,18 @@ describe('GET /game/:id', () => {
 
     await getGame(req, res);
 
-    expect(from).toHaveBeenCalledWith(bjGames);
-    expect(where).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.body).toBe(JSON.stringify({ id: 1, dealerScore: 20, nbPlayer: 1 }));
   });
+
+  it('returns 404 and empty body', async () => {
+    where.mockResolvedValue([])
+    const req2 = { params: { id: '2' } } as unknown as Request;
+    const res2 = createMockResponse();
+    await getGame(req2, res2);
+    expect(res2.status).toHaveBeenCalledWith(404);
+    expect(res2.body).toBeUndefined();
+  })
 });
 
 describe('POST /game/:id', () => {

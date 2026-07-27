@@ -46,4 +46,16 @@ describe('GET /user/stats/:id', () => {
       })
     );
   });
+
+  it('returns 404 and an empty body', async () => {
+      where.mockResolvedValue([]);
+      const res = createMockResponse();
+      const req = { params: { id: '1' } } as unknown as Request;
+
+      await getUserStats(req, res);
+      expect(from).toHaveBeenCalledWith(bjStatsView);
+      expect(where).toHaveBeenCalledTimes(1);
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.body).toBeUndefined();
+  })
 });
